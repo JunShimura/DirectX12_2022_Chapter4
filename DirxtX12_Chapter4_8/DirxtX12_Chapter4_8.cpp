@@ -344,6 +344,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		}
 	}
 
+	// Chapter4_7 P127
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
 		{
 			"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0,
@@ -351,6 +352,38 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0
 		},
 	};
+	//
+
+	// Chapter4_8_3 P130
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC gpipeline = {};
+	gpipeline.pRootSignature = nullptr; // あとで設定する
+	gpipeline.VS.pShaderBytecode = _vsBlob->GetBufferPointer();
+	gpipeline.VS.BytecodeLength = _vsBlob->GetBufferSize();
+	gpipeline.PS.pShaderBytecode = _psBlob->GetBufferPointer();
+	gpipeline.PS.BytecodeLength = _psBlob->GetBufferSize();
+
+	// Chapter4_8_4 P130
+	// Chapter4_8_5 P133
+	gpipeline.BlendState.AlphaToCoverageEnable = false;
+	gpipeline.BlendState.IndependentBlendEnable = false; 
+	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc = {}; 
+	renderTargetBlendDesc.BlendEnable = false; 
+	renderTargetBlendDesc.LogicOpEnable = false; 
+	renderTargetBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; 
+	gpipeline.BlendState.RenderTarget[0] = renderTargetBlendDesc;
+
+	// デフォルトのサンプルマスクを表す定数（0xffffffff）
+	gpipeline.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+	gpipeline.RasterizerState.MultisampleEnable = false;
+	gpipeline.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;  // カリングしない
+	gpipeline.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // 中身を塗りつぶす
+	gpipeline.RasterizerState.DepthClipEnable = true; // 深度方向のクリッピングは有効に
+
+	
+	gpipeline.DepthStencilState.DepthEnable = false;
+	gpipeline.DepthStencilState.StencilEnable = false;
+
 
 
 
