@@ -239,11 +239,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	ShowWindow(hwnd, SW_SHOW);
 
 	//Chapter4_2_1 P105
+	//XMFLOAT3 vertices[] = {
+	//	{-0.5f, -1.0f, 0.0f} ,	//左下    
+	//	{-1.0f,  1.0f, 0.0f} ,	//左上    
+	//	{ 1.0f, -1.0f, 0.0f} , 	//右下
+	//};
+
 	XMFLOAT3 vertices[] = {
-		{-1.0f, -1.0f, 0.0f} ,	//左下    
-		{-1.0f,  1.0f, 0.0f} ,	//左上    
-		{ 1.0f, -1.0f, 0.0f} , 	//右下
+		{-0.5f, -0.7f, 0.0f} , // 左下
+		{ 0.0f, 0.7f, 0.0f} , // 左上
+		{ 0.5f, -0.7f, 0.0f} , // 右下
 	};
+
 
 	//Chapter4_3_4 P112
 	D3D12_HEAP_PROPERTIES heapprop = {};
@@ -363,29 +370,88 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	gpipeline.PS.BytecodeLength = _psBlob->GetBufferSize();
 
 	// Chapter4_8_4 P130
-	// Chapter4_8_5 P133
-	gpipeline.BlendState.AlphaToCoverageEnable = false;
-	gpipeline.BlendState.IndependentBlendEnable = false; 
-	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc = {}; 
-	renderTargetBlendDesc.BlendEnable = false; 
-	renderTargetBlendDesc.LogicOpEnable = false; 
-	renderTargetBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL; 
-	gpipeline.BlendState.RenderTarget[0] = renderTargetBlendDesc;
-
 	// デフォルトのサンプルマスクを表す定数（0xffffffff）
 	gpipeline.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
-
 	gpipeline.RasterizerState.MultisampleEnable = false;
 	gpipeline.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;  // カリングしない
 	gpipeline.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID; // 中身を塗りつぶす
 	gpipeline.RasterizerState.DepthClipEnable = true; // 深度方向のクリッピングは有効に
+	//残り
+	gpipeline.RasterizerState.FrontCounterClockwise = false;
+	gpipeline.RasterizerState.DepthBias = D3D12_DEFAULT_DEPTH_BIAS;
+	gpipeline.RasterizerState.DepthBiasClamp = D3D12_DEFAULT_DEPTH_BIAS_CLAMP;
+	gpipeline.RasterizerState.SlopeScaledDepthBias = D3D12_DEFAULT_SLOPE_SCALED_DEPTH_BIAS;
+	gpipeline.RasterizerState.AntialiasedLineEnable = false;
+	gpipeline.RasterizerState.ForcedSampleCount = 0;
+	gpipeline.RasterizerState.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
 
-	
+	// Chapter4_8_5 P133
+	gpipeline.BlendState.AlphaToCoverageEnable = false;
+	gpipeline.BlendState.IndependentBlendEnable = false;
+	D3D12_RENDER_TARGET_BLEND_DESC renderTargetBlendDesc = {};
+	renderTargetBlendDesc.BlendEnable = false;
+	renderTargetBlendDesc.LogicOpEnable = false;
+	renderTargetBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	gpipeline.BlendState.RenderTarget[0] = renderTargetBlendDesc;
+
 	gpipeline.DepthStencilState.DepthEnable = false;
 	gpipeline.DepthStencilState.StencilEnable = false;
 
+	// Chapher4_8_6 P137
+	gpipeline.InputLayout.pInputElementDescs = inputLayout; // レイアウト先頭アドレス
+	gpipeline.InputLayout.NumElements = _countof(inputLayout); // レイアウト配列の要素数
+	// Chapher4_8_6 P138
+	gpipeline.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;//ストリップ時のカットなし
+	gpipeline.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;//三角形で構成
 
 
+	// Chapher4_8_7 P139
+	gpipeline.NumRenderTargets = 1; // 今は 1 つのみ
+	gpipeline.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM; // 0 ～ 1 に正規化された RGBA
+
+	// Chapter4_8_8
+	gpipeline.SampleDesc.Count = 1; // サンプリングは 1 ピクセルにつき 1
+	gpipeline.SampleDesc.Quality = 0; // クオリティは最低
+
+	// Chapter4_9_2 P141
+	ID3D12RootSignature* rootsignature = nullptr;
+	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
+	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	ID3DBlob* rootSigBlob = nullptr;
+	result = D3D12SerializeRootSignature(
+		&rootSignatureDesc, // ルートシグネチャ設定
+		D3D_ROOT_SIGNATURE_VERSION_1_0, // ルートシグネチャバージョン
+		&rootSigBlob, // シェーダーを作ったときと同じ
+		&errorBlob); // エラー処理も同じ
+
+	// Chapter4_9_2 P142
+	result = _dev->CreateRootSignature(
+		0, // nodemask。0 でよい
+		rootSigBlob->GetBufferPointer(), // シェーダーのときと同様
+		rootSigBlob->GetBufferSize(), // シェーダーのときと同様
+		IID_PPV_ARGS(&rootsignature));
+	rootSigBlob->Release(); // 不要になったので解放
+	gpipeline.pRootSignature = rootsignature;
+
+	// Chapter4_8_9 P139
+	ID3D12PipelineState* _pipelinestate = nullptr;
+	result = _dev->CreateGraphicsPipelineState(
+		&gpipeline, IID_PPV_ARGS(&_pipelinestate));
+
+	// Chapter4_10_1 P143
+	D3D12_VIEWPORT viewport = {};
+	viewport.Width = window_width; // 出力先の幅（ピクセル数）
+	viewport.Height = window_height; // 出力先の高さ（ピクセル数）
+	viewport.TopLeftX = 0; // 出力先の左上座標 X
+	viewport.TopLeftY = 0; // 出力先の左上座標 Y
+	viewport.MaxDepth = 1.0f; // 深度最大値
+	viewport.MinDepth = 0.0f; // 深度最小値
+	// Chapter4_10_2 P143
+	D3D12_RECT scissorrect = {};
+	scissorrect.top = 0; // 切り抜き上座標
+	scissorrect.left = 0; // 切り抜き左座標
+	scissorrect.right = scissorrect.left + window_width; // 切り抜き右座標
+	scissorrect.bottom = scissorrect.top + window_height; // 切り抜き下座標
 
 	MSG	msg = {};
 	float clearColor[] = { 1.0f, 1.0f, 0.0f, 1.0f }; //黄色
@@ -411,12 +477,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		BarrierDesc.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 		BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
 		BarrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		_cmdList->ResourceBarrier(1, &BarrierDesc);
 		////
+
+		// Chapter4_10_3 P144
+		_cmdList->SetPipelineState(_pipelinestate);
 
 		auto rtvH = rtvHeaps->GetCPUDescriptorHandleForHeapStart();
 		rtvH.ptr += bbIdx * _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		_cmdList->OMSetRenderTargets(1, &rtvH, true, nullptr);
 		_cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
+
+
+		// Chapter4_10_3 P145 改造
+		_cmdList->RSSetViewports(1, &viewport);
+		_cmdList->RSSetScissorRects(1, &scissorrect);
+		_cmdList->SetGraphicsRootSignature(rootsignature);
+		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		_cmdList->IASetVertexBuffers(0, 1, &vbView);
+		_cmdList->DrawInstanced(3, 1, 0, 0);
 
 		//// Chapter3_4_3　 リソースバリア
 		BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
