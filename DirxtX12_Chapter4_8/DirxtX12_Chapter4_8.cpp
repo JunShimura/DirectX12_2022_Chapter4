@@ -245,6 +245,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{ 0.4f, -0.7f, 0.0f} , // 右下
 		{ 0.4f,  0.7f, 0.0f} , // 右上
 	};
+
+	//XMFLOAT3 vertices[] = {	//TRIANGLELIST
+	//	//　左下の三角形
+	//	{-0.4f,-0.7f,0.0f} ,	//左下#0
+	//	{-0.4f,0.7f,0.0f} ,	//左上#1
+	//	{0.4f,-0.7f,0.0f} ,	//右下#2
+	//	//　右上の三角形
+	//	{-0.4f,0.7f,0.0f} ,	//左上#3
+	//	{0.4f,0.7f,0.0f} ,	//右上#4
+	//	{0.4f,-0.7f,0.0f},	//右下#5
+	//};
+
+	//XMFLOAT3 vertices[] = {	//TRIANGLESTRIP
+	//{-0.4f,-0.7f,0.0f} ,//左下
+	//{-0.4f,0.7f,0.0f} ,//左上
+	//{0.4f,-0.7f,0.0f} ,//右下
+	//{0.4f,0.7f,0.0f} ,//右上
+	//{0.9f,0.0f,0.0f} ,//右中
+	//};
+
+
+
 	//Chapter4_3_4 P112
 	D3D12_HEAP_PROPERTIES heapprop = {};
 	heapprop.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -285,7 +307,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vbView.SizeInBytes = sizeof(vertices);      // 全バイト数
 	vbView.StrideInBytes = sizeof(vertices[0]); // 1頂点あたりのバイト数
 
-		//Chapter4_11_2 P150
+	//Chapter4_11_2 P150
 	unsigned short indices[] = { 0, 1, 2,    2, 1, 3 };
 	ID3D12Resource* idxBuff = nullptr;
 	resdesc.Width = sizeof(indices);
@@ -522,8 +544,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		//Chapter4_11_2 P151
 		_cmdList->IASetIndexBuffer(&ibView);
 		_cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
-		//_cmdList->DrawInstanced(3, 1, 0, 0);
-
+	
 		//// Chapter3_4_3　 リソースバリア
 		BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		BarrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
